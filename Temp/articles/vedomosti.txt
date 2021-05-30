@@ -1,8 +1,0 @@
-mail: mailto:new-vedomosti@vedomosti.ru
-site: https://www.vedomosti.ru
-articles:
-https://www.vedomosti.ru/society/news/2021/05/28/871860-v-chehii-predlozhili-prinyat-zakon-o-kompensatsii-postradavshim-ot-vzrivov-vo-vrbetitse
-https://www.vedomosti.ru/society/news/2021/05/28/871859-raketa-soyuz-21b-36-sputnikami-oneweb
-https://www.vedomosti.ru/media/news/2021/05/28/871857-chernii-spisok
-https://www.vedomosti.ru/finance/news/2021/05/28/871856-obem-zadolzhennosti-rossiyan-po-ipoteke-previsil-10-trln-rublei
-https://www.vedomosti.ru/business/news/2021/05/28/871855-lukashenko-sprognoziroval-rost-tovarooborota-mezhdu-rossiei-i-belorussiei

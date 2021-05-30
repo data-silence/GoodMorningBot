@@ -14,10 +14,24 @@ from geopy.geocoders import Nominatim
 geolocator = Nominatim(user_agent="Mozilla/5.0 (Windows; U; WinNT; en; rv:1.0.2) Gecko/20030311 Beonex/0.8.2-stable")
 token = "1864998452:AAGI9AWWy9kiExZWSM5fqUv8XcnNXiRNR8s"
 
+sportru = 'https://news.yandex.ru/smi/sportru'
+kinopoisk = 'https://news.yandex.ru/smi/kinopoisk'
+vedomosti = 'https://news.yandex.ru/smi/vedomosti'
+avtoru = 'https://news.yandex.ru/smi/magautoru'
+geektimes = 'https://news.yandex.ru/smi/geektimes'
+vtimes = 'https://news.yandex.ru/smi/vtimes-io'
+meduza = 'https://news.yandex.ru/smi/meduzaio'
+rbc = 'https://news.yandex.ru/smi/rbc'
+thebell = 'https://news.yandex.ru/smi/thebell'
+
+parsing_url = [vedomosti, rbc, kinopoisk, sportru, geektimes, vtimes, meduza, thebell, avtoru]
+
+
 subscribed_users = set()
+users_articles = {}
 
 
-def what_weather(city):
+def what_weather(city='Москва'):
 	"""Определят погоду в требуемом пользователю городе"""
 	url = f'http://wttr.in/{city}'
 	weather_parameters = {
@@ -34,7 +48,7 @@ def what_weather(city):
 		return '<ошибка на сервере погоды>'
 
 
-def currency_rate(valute):
+def currency_rate(valute='USD'):
 	"""Обрабатывает необходимые операции c выбранной валютой"""
 	answer_rate = requests.get('https://api.coingate.com/v2/rates/merchant')
 	cross_usd = answer_rate.json()['USDT']
@@ -85,10 +99,12 @@ def wright_db(user_log):
 """Данный модуль отвечает за парсинг: обрабатывает поток ссылок из Я.Новостей на конечные сайты СМИ, вытягивает из 
 них ссылки на 5 последних новостей и записывает их в файл"""
 
+
 def get_smi_links(smi_link):
 	"""Основная функция для парсинга - получает ссылку на сми и вытягивает из неё (пока) список 5 статей"""
 	# список статей записывается в файлы на винте, имя файла - имя сми
-	headers = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36"}
+	headers = {f"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+	                          "Chrome/90.0.4430.212 Safari/537.36"}
 	answer = requests.get(smi_link, headers=headers)
 	soup = BeautifulSoup(answer.text, 'lxml')
 
@@ -122,36 +138,25 @@ def parsing_smi():
 	# эта функция дважды использует задержку: для задержки парсинга страницы и самого процесса парсинга чтобы не банили
 	# в дальнейшем работа с запросами пользователя идёт через обработку сохранённых в процессе парсинга файлов:
 	# так быстрее для пользователя, и безопаснее для меня
-	sportru = 'https://news.yandex.ru/smi/sportru'
-	kinopoisk = 'https://news.yandex.ru/smi/kinopoisk'
-	vedomosti = 'https://news.yandex.ru/smi/vedomosti'
-	avtoru = 'https://news.yandex.ru/smi/magautoru'
-	geektimes = 'https://news.yandex.ru/smi/geektimes'
-	vtimes = 'https://news.yandex.ru/smi/vtimes-io'
-	meduza = 'https://news.yandex.ru/smi/meduzaio'
-	rbc = 'https://news.yandex.ru/smi/rbc'
-	thebell = 'https://news.yandex.ru/smi/thebell'
-
-	parsing_url = [vedomosti, rbc, kinopoisk, sportru, geektimes, vtimes, meduza, thebell, avtoru]
-
-	for url in parsing_url:
-		get_smi_links(url)
-		time.sleep(60)
-	time.sleep(3600)
-
+	while True:
+		for url in parsing_url:
+			get_smi_links(url)
+			time.sleep(60)
+		time.sleep(3600)
 
 
 """Данный модуль отвечает за формирование сводной базы статей, спарсенных в последний раз"""
 # Из этой базы бот будет тащить запросы, отсюда будут формироваться словари пользовательских предпочтений"
 
+
 def get_fresh_smi_json():
 	"""Собирает результаты парсинга отдельных сайтов в сводный словарь и помещает в специальный json-файл"""
 	today_links = []
-	filenames_list = glob.glob("articles\\*.txt") # сохраняет в список файлы в директории articles с расширением *.txt
+	filenames_list = glob.glob("articles\\*.txt")  # сохраняет в список файлы в директории articles с расширением *.txt
 	# print(filenames_list)
 	for file in filenames_list:
 		with open(f'{file}', 'r', encoding='utf8') as f:
-			templist = [] # Временный список для хранения ссылок по каждому сми
+			templist = []  # Временный список для хранения ссылок по каждому сми
 			today_smi_list = {}
 			for line in f:
 				templist.append(line.strip('\n').strip())
@@ -171,18 +176,29 @@ def get_smi_compilation(number=3):
 
 	articles_for_choise = []
 	for smi in json_file:
-		common_result = smi['articles'][:1][0] # в дальнейшем здесь  использовать переменную для задания общего количества выборки статей по одному сми
+		common_result = smi['articles'][:1][0]  # в дальнейшем здесь не забыть использовать переменную
 		articles_for_choise.append(common_result)
 	random_final_article = random.choices(articles_for_choise, k=number)
 	return random_final_article
 
 
+def the_morning_show():
+	while True:
+		for username in subscribed_users:
+			number = users_articles[username]
+			bot.send_message(username, f'Доброе утро, страна!')
+			bot.send_message(username, f'Биржевой курс ихних бумажек:\n {currency_rate()}')
+			bot.send_message(username, f'Случайная подборка {number} новостей, как ты и хотел:\n')
+			for digit in range(number):
+				bot.send_message(username, {get_smi_compilation()[digit - 1]})
+			bot.send_message(username, f'Интересного тебе дня и хорошего настроения, {username}!')
+		time.sleep(43200)
+
+
+
 # подключаемся к телеграму
 bot = telebot.TeleBot(token=token)
-# users = {}
 
-thread = threading.Thread(target=parsing_smi)
-thread.start()
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -202,6 +218,38 @@ def help(message):
 	bot.send_message(user, help_text)
 
 
+@bot.message_handler(commands=['subscribe'])
+def subscribe(message):
+	subscribed_users.add(message.chat.id)
+	global isRunning
+	if not isRunning:
+		chat_id = message.chat.id
+		amount_articles = message.text
+		msg = bot.send_message(chat_id, 'Сколько случайных новостей вы хотите получать за раз?')
+		bot.register_next_step_handler(msg, how_much_articles)
+		isRunning = True
+
+
+def how_much_articles(message):
+	chat_id = message.chat.id
+	amount_articles = message.text
+	if not amount_articles.isdigit():
+		msg = bot.send_message(chat_id, 'Возраст должен быть числом, введите ещё раз.')
+		bot.register_next_step_handler(msg, how_much_articles)
+		return
+	msg = bot.send_message(chat_id, f'Спасибо, я запомнил: вам слать {amount_articles} новостей')
+	users_articles[message.chat.id] = amount_articles
+	isRunning = False
+
+
+@bot.message_handler(commands=['unsubscribe'])
+def unsubscribe(message):
+	try:
+		subscribed_users.discard(message.chat.id)
+	except:
+		pass
+
+
 @bot.message_handler(content_types=['text'])
 def guess_answer(message):
 	"""Функция, которая пытается угадать из текста, что хочет пользователь: валюту или погоду"""
@@ -216,7 +264,8 @@ def guess_answer(message):
 		weather_answer = what_weather(answer)
 		bot.send_message(user, weather_answer)
 	else:
-		bot.send_message(user, 'Не смог понять ваше сообщение: умею работать с координатами, городами и курсами валют/криптовалют. А у вас какая-то чушь, бумажки или компот')
+		bot.send_message(user, f'Не смог понять ваше сообщение: умею работать с координатами, городами и курсами '
+		                       f'валют/криптовалют. А у вас какая-то чушь, бумажки или компот')
 
 
 @bot.message_handler(content_types=['location'])
@@ -224,7 +273,7 @@ def handle_loc(message):
 	user = message.chat.id  # id автора сообщения
 	now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 	coord_dict = message.location
-	default_currency = 'USD'
+	# default_currency = 'USD'
 	coord = (coord_dict.latitude, coord_dict.longitude)
 	reverse = partial(geolocator.reverse, language="ru")
 	address = reverse(coord).raw['address']
@@ -237,8 +286,8 @@ def handle_loc(message):
 	                       f'известный в сети как {message.from_user.username}')
 	bot.send_message(user, f'Готовлю подборку главного для тебя, жителя человеческого поселения {city}, {country}')
 	bot.send_message(user, f'Погодка сегодня у тебя такая:\n {what_weather(city)}')
-	bot.send_message(user, f'Биржевой курс ихних бумажек:\n {currency_rate(default_currency)}')
-	bot.send_message(user, f'Случайная подборка новостей для тебя:\n')
+	bot.send_message(user, f'Биржевой курс ихних бумажек:\n {currency_rate()}')
+	bot.send_message(user, f'Случайная подборка новостей:\n')
 	for number in range(3):
 		bot.send_message(user, {get_smi_compilation()[number-1]})
 	bot.send_message(user, f'Вы держитесь здесь, вам всего доброго, хорошего настроения и здоровья!')
@@ -247,17 +296,10 @@ def handle_loc(message):
 	wright_db(user_log)
 
 
-@bot.message_handler(commands=['subscribe'])
-def subscribe(message):
-	subscribed_users.add(message.chat.id)
-
-
-@bot.message_handler(commands=['unsubscribe'])
-def unsubscribe(message):
-	try:
-		subscribed_users.discard(message.chat.id)
-	except:
-		pass
+thread1 = threading.Thread(target=parsing_smi)
+thread2 = threading.Thread(target=the_morning_show)
+thread1.start()
+thread2.start()
 
 
 while True:
