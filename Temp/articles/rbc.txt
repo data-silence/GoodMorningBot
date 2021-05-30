@@ -1,0 +1,8 @@
+mail: mailto:ktitov@rbc.ru
+site: http://www.rbc.ru
+articles:
+https://www.rbc.ru/politics/28/05/2021/60b135a59a794763377a7b06
+https://www.rbc.ru/rbcfreenews/60b136cc9a794763377a7b0b
+https://www.rbc.ru/society/28/05/2021/60b129939a7947601848c0fd
+https://www.rbc.ru/rbcfreenews/60b12e989a794761dc8361fe
+https://www.rbc.ru/society/28/05/2021/60b12aa79a79476143fda05c

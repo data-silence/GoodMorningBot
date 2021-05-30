@@ -27,14 +27,14 @@ def short_link(string):
         start += 2
         end = string.rfind('.')
 
-        new_string=string[start:end]
+        new_string = string[start:end]
         print(new_string)
     elif flag == 1:
         start = string.find('.')
         start = start + 1
         end = string.rfind('.')
 
-        new_string=string[start:end]
+        new_string = string[start:end]
         return new_string
 
 def get_smi_links(smi_link):
@@ -63,9 +63,9 @@ def get_smi_links(smi_link):
     # print(result.index('/smi/'))
     # print(result.index('//yandex.ru/support/news/info-for-mass-media.xml'))
     # print(result)
-    url = result[17]
-    mail = result[18]
-    cite = short_link(url)
+    # url = result[17]
+    # mail = result[18]
+    # cite = short_link(result[17])
     links = []
     for el in result[19:24]:
         links.append(el)
@@ -74,34 +74,34 @@ def get_smi_links(smi_link):
     # print(mail)
     # print(links)
 
-    with open(f'articles\\{cite}.txt', 'w', encoding='utf8') as f:
-        f.write(f'mail: {mail}')
-        f.write('\n')
-        f.write(f'site: {url}')
-        f.write('\n')
-        f.write(f'articles:\n')
+    with open(f'articles\\{smi_link[27:]}.txt', 'w', encoding='utf8') as f:
+        # f.write(f'mail: {mail}')
+        # f.write('\n')
+        # f.write(f'site: {url}')
+        # f.write('\n')
+        # f.write(f'articles:\n')
         for el in links:
             f.write(f'{el}\n')
 
 
 
 
-# sportru = 'https://news.yandex.ru/smi/sportru'
+sportru = 'https://news.yandex.ru/smi/sportru'
 kinopoisk = 'https://news.yandex.ru/smi/kinopoisk'
 vedomosti = 'https://news.yandex.ru/smi/vedomosti'
-# avtoru = 'https://news.yandex.ru/smi/magautoru'
-# geektimes = 'https://news.yandex.ru/smi/geektimes'
-# vtimes = 'https://news.yandex.ru/smi/vtimes-io'
-# meduza = 'https://news.yandex.ru/smi/meduzaio'
+avtoru = 'https://news.yandex.ru/smi/magautoru'
+geektimes = 'https://news.yandex.ru/smi/geektimes'
+vtimes = 'https://news.yandex.ru/smi/vtimes-io'
+meduza = 'https://news.yandex.ru/smi/meduzaio'
 rbc = 'https://news.yandex.ru/smi/rbc'
-# thebell = 'https://news.yandex.ru/smi/thebell'
-sportru = 'https://news.yandex.ru/smi/sportru'
+thebell = 'https://news.yandex.ru/smi/thebell'
 
-parsing_url = [vedomosti, rbc, kinopoisk, sportru]
+parsing_url = [vedomosti, rbc, kinopoisk, sportru, geektimes, vtimes, meduza, thebell, avtoru]
+# parsing_url = [meduza]
 
 for url in parsing_url:
     get_smi_links(url)
-    time.sleep(120)
+    time.sleep(60)
 
 
 # def collect_user_smi:
