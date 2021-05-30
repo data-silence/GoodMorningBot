@@ -2,7 +2,13 @@ import requests
 from bs4 import BeautifulSoup
 import time
 
+'''Данный модуль отвечает за парсинг: обрабатывает поток ссылок из Я.Новостей на конечные сайты СМИ, вытягивает из 
+них ссылки на 5 последних новостей и записывает их в файл '''
+
+
 def short_link(string):
+    '''Вспомогательная функция: вытягивает из url-ссылок на сми короткие наименования сми'''
+    # делает, что нужно, но почему-то сохраненные названия приводят к конфликтам при присвоении их к имени файла
     new_list = list(string)
     count=0
     flag=0
@@ -37,8 +43,10 @@ def short_link(string):
         new_string = string[start:end]
         return new_string
 
-def get_smi_links(smi_link):
 
+def get_smi_links(smi_link):
+    '''Основная функция для парсинга - получает ссылку на сми и вытягивает из неё (пока) список 5 статей'''
+    # список статей записывается в файлы на винте, имя файла - имя сми
     headers = {
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                       "Chrome/90.0.4430.212 Safari/537.36 "
@@ -59,20 +67,15 @@ def get_smi_links(smi_link):
     with open('links.txt', 'r', encoding='utf8') as f:
         for line in f:
             result.append(line.strip('\n').strip())
-
-    # print(result.index('/smi/'))
-    # print(result.index('//yandex.ru/support/news/info-for-mass-media.xml'))
     # print(result)
     # url = result[17]
     # mail = result[18]
     # cite = short_link(result[17])
+
     links = []
     for el in result[19:24]:
         links.append(el)
-
-    # print(url[8:-1])
-    # print(mail)
-    # print(links)
+    # os.remove("links.txt")
 
     with open(f'articles\\{smi_link[27:]}.txt', 'w', encoding='utf8') as f:
         # f.write(f'mail: {mail}')
@@ -83,9 +86,7 @@ def get_smi_links(smi_link):
         for el in links:
             f.write(f'{el}\n')
 
-
-
-
+'''Этот блок нужно перенести в основной код бота'''
 sportru = 'https://news.yandex.ru/smi/sportru'
 kinopoisk = 'https://news.yandex.ru/smi/kinopoisk'
 vedomosti = 'https://news.yandex.ru/smi/vedomosti'
@@ -102,7 +103,3 @@ parsing_url = [vedomosti, rbc, kinopoisk, sportru, geektimes, vtimes, meduza, th
 for url in parsing_url:
     get_smi_links(url)
     time.sleep(60)
-
-
-# def collect_user_smi:
-#
