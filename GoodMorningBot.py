@@ -140,6 +140,7 @@ def parsing_smi():
 	time.sleep(3600)
 
 
+
 """Данный модуль отвечает за формирование сводной базы статей, спарсенных в последний раз"""
 # Из этой базы бот будет тащить запросы, отсюда будут формироваться словари пользовательских предпочтений"
 
@@ -164,6 +165,7 @@ def get_fresh_smi_json():
 
 def get_smi_compilation(number=3):
 	"""Генерирует заданное количество призвольных статей, хранящихся в json-файле today_links_db"""
+	get_fresh_smi_json()
 	with open('today_links_db.txt', 'r', encoding='utf8') as f:
 		json_file = json.load(f)
 
@@ -179,6 +181,8 @@ def get_smi_compilation(number=3):
 bot = telebot.TeleBot(token=token)
 # users = {}
 
+thread = threading.Thread(target=parsing_smi)
+thread.start()
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -254,9 +258,6 @@ def unsubscribe(message):
 		subscribed_users.discard(message.chat.id)
 	except:
 		pass
-
-thread = threading.Thread(target=parsing_smi)
-thread.start()
 
 
 while True:
