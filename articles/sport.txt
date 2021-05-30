@@ -1,0 +1,8 @@
+mail: mailto:info@oreanda.ru
+site: https://www.sport.ru/
+articles:
+https://www.sport.ru/hockey/eks-gubernator-omskoy-oblasti-ob-avangarde-eto-ne-nasha-komanda-eto-otrezannyy-/article482249/
+https://www.sport.ru/basketball/tsska-ustupil-anadolu-efes-v-polufinale-evroligi/article482250/
+https://www.sport.ru/football/muhin-do-poslednego-dumal-chto-smogu-ostatsya-v-lokomotive/article482248/
+https://www.sport.ru/football/semak-hochet-videt-dyupina-v-rubine/article482245/
+https://www.sport.ru/hockey/obladatel-kubka-stenli-loktionov-stal-igrokom-amura-v-rezultate-obmena-s-tsska/article482247/
