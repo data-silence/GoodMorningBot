@@ -1,31 +1,21 @@
 import telebot
 import requests
-from functools import partial
-from geopy.geocoders import Nominatim
 import datetime
-from bs4 import BeautifulSoup
 import time
 import glob
 import json
 import random
+import threading
+from bs4 import BeautifulSoup
+from functools import partial
+from geopy.geocoders import Nominatim
+
 
 geolocator = Nominatim(user_agent="Mozilla/5.0 (Windows; U; WinNT; en; rv:1.0.2) Gecko/20030311 Beonex/0.8.2-stable")
 token = "1864998452:AAGI9AWWy9kiExZWSM5fqUv8XcnNXiRNR8s"
 
-sportru = 'https://news.yandex.ru/smi/sportru'
-kinopoisk = 'https://news.yandex.ru/smi/kinopoisk'
-vedomosti = 'https://news.yandex.ru/smi/vedomosti'
-avtoru = 'https://news.yandex.ru/smi/magautoru'
-geektimes = 'https://news.yandex.ru/smi/geektimes'
-vtimes = 'https://news.yandex.ru/smi/vtimes-io'
-meduza = 'https://news.yandex.ru/smi/meduzaio'
-rbc = 'https://news.yandex.ru/smi/rbc'
-thebell = 'https://news.yandex.ru/smi/thebell'
+subscribed_users = set()
 
-parsing_url = [vedomosti, rbc, kinopoisk, sportru, geektimes, vtimes, meduza, thebell, avtoru]
-
-# f = open("log.txt", "w") #использовалось только для первого запуска, чтобы создать файл.
-# f.close()
 
 def what_weather(city):
 	"""Определят погоду в требуемом пользователю городе"""
@@ -84,102 +74,77 @@ def city_check(city):
 		return True
 
 
+# f = open("log.txt", "w") #использовалось только для первого запуска, чтобы создать файл.
+# f.close()
 def wright_db(user_log):
 	with open('log.txt', 'a',
 	          encoding='utf8') as f:  # не забыть, что повторное выполнение кода приводит к дозаписи(!) в файл
 		f.write(f'{user_log}\n')
 
 
-'''Данный модуль отвечает за парсинг: обрабатывает поток ссылок из Я.Новостей на конечные сайты СМИ, вытягивает из 
-них ссылки на 5 последних новостей и записывает их в файл '''
-
-
-def short_link(string):
-    '''Вспомогательная функция: вытягивает из url-ссылок на сми короткие наименования сми'''
-    # делает, что нужно, но почему-то сохраненные названия приводят к конфликтам при присвоении их к имени файла
-    new_list = list(string)
-    count=0
-    flag=0
-
-    if 'w' in new_list:
-        index1 = new_list.index('w')
-        new_list.pop(index1)
-        count += 1
-    if 'w' in new_list:
-        index2 = new_list.index('w')
-        if index2 != -1 and index2 == index1:
-            new_list.pop(index2)
-            count += 1
-    if 'w' in new_list:
-        index3= new_list.index('w')
-        if index3!= -1 and index3== index2 and new_list[index3+1]=='.':
-            new_list.pop(index3)
-            count+=1
-            flag = 1
-    if flag == 0:
-        start = string.find('/')
-        start += 2
-        end = string.rfind('.')
-
-        new_string = string[start:end]
-        print(new_string)
-    elif flag == 1:
-        start = string.find('.')
-        start = start + 1
-        end = string.rfind('.')
-
-        new_string = string[start:end]
-        return new_string
-
+"""Данный модуль отвечает за парсинг: обрабатывает поток ссылок из Я.Новостей на конечные сайты СМИ, вытягивает из 
+них ссылки на 5 последних новостей и записывает их в файл"""
 
 def get_smi_links(smi_link):
-    '''Основная функция для парсинга - получает ссылку на сми и вытягивает из неё (пока) список 5 статей'''
-    # список статей записывается в файлы на винте, имя файла - имя сми
-    headers = {
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/90.0.4430.212 Safari/537.36 "
-    }
+	"""Основная функция для парсинга - получает ссылку на сми и вытягивает из неё (пока) список 5 статей"""
+	# список статей записывается в файлы на винте, имя файла - имя сми
+	headers = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36"}
+	answer = requests.get(smi_link, headers=headers)
+	soup = BeautifulSoup(answer.text, 'lxml')
 
-    answer = requests.get(smi_link, headers=headers)
-    soup = BeautifulSoup(answer.text, 'lxml')
+	urls = []
+	for link in soup.find_all('a'):
+		urls.append(link.get('href'))
 
-    urls = []
-    for link in soup.find_all('a'):
-        urls.append(link.get('href'))
+	with open('links.txt', 'w', encoding='utf8') as f:
+		for el in urls:
+			f.write(f'{el}\n')
 
-    with open('links.txt', 'w', encoding='utf8') as f:
-        for el in urls:
-            f.write(f'{el}\n')
+	result = []
+	with open('links.txt', 'r', encoding='utf8') as f:
+		for line in f:
+			result.append(line.strip('\n').strip())
+	# print(result)
 
-    result = []
-    with open('links.txt', 'r', encoding='utf8') as f:
-        for line in f:
-            result.append(line.strip('\n').strip())
-    # print(result)
-    # url = result[17]
-    # mail = result[18]
-    # cite = short_link(result[17])
+	links = []
+	for el in result[19:24]:
+		links.append(el)
+	# os.remove("links.txt")
 
-    links = []
-    for el in result[19:24]:
-        links.append(el)
-    # os.remove("links.txt")
-
-    with open(f'articles\\{smi_link[27:]}.txt', 'w', encoding='utf8') as f:
-        # f.write(f'mail: {mail}')
-        # f.write('\n')
-        # f.write(f'site: {url}')
-        # f.write('\n')
-        # f.write(f'articles:\n')
-        for el in links:
-            f.write(f'{el}\n')
+	with open(f'articles\\{smi_link[27:]}.txt', 'w', encoding='utf8') as f:
+		for el in links:
+			f.write(f'{el}\n')
 
 
-'''Данный модуль отвечает за формирование сводной базы статей, спарсенных в последний раз'''
+def parsing_smi():
+	"""Функция, запускающая процесс парсинга - передает в основную функцию get_smi_links набор ссылок для парсинга"""
+	# скоро будет добавлена функция, которая будет парсит весь массив ссылок из Я.Новостей и передавать сюда
+	# эта функция дважды использует задержку: для задержки парсинга страницы и самого процесса парсинга чтобы не банили
+	# в дальнейшем работа с запросами пользователя идёт через обработку сохранённых в процессе парсинга файлов:
+	# так быстрее для пользователя, и безопаснее для меня
+	sportru = 'https://news.yandex.ru/smi/sportru'
+	kinopoisk = 'https://news.yandex.ru/smi/kinopoisk'
+	vedomosti = 'https://news.yandex.ru/smi/vedomosti'
+	avtoru = 'https://news.yandex.ru/smi/magautoru'
+	geektimes = 'https://news.yandex.ru/smi/geektimes'
+	vtimes = 'https://news.yandex.ru/smi/vtimes-io'
+	meduza = 'https://news.yandex.ru/smi/meduzaio'
+	rbc = 'https://news.yandex.ru/smi/rbc'
+	thebell = 'https://news.yandex.ru/smi/thebell'
+
+	parsing_url = [vedomosti, rbc, kinopoisk, sportru, geektimes, vtimes, meduza, thebell, avtoru]
+
+	for url in parsing_url:
+		get_smi_links(url)
+		time.sleep(60)
+	time.sleep(3600)
+
+
+"""Данный модуль отвечает за формирование сводной базы статей, спарсенных в последний раз"""
 # Из этой базы бот будет тащить запросы, отсюда будут формироваться словари пользовательских предпочтений"
 
 def get_fresh_smi_json():
-	'''Собирает результаты парсинга отдельных сайтов в сводный словарь и помещает в специальный json-файл'''
+	"""Собирает результаты парсинга отдельных сайтов в сводный словарь и помещает в специальный json-файл"""
 	today_links = []
 	filenames_list = glob.glob("articles\\*.txt") # сохраняет в список файлы в директории articles с расширением *.txt
 	# print(filenames_list)
@@ -198,7 +163,7 @@ def get_fresh_smi_json():
 
 
 def get_smi_compilation(number=3):
-	'''Генерирует заданное количество призвольных статей, хранящихся в json-файле today_links_db'''
+	"""Генерирует заданное количество призвольных статей, хранящихся в json-файле today_links_db"""
 	with open('today_links_db.txt', 'r', encoding='utf8') as f:
 		json_file = json.load(f)
 
@@ -212,7 +177,7 @@ def get_smi_compilation(number=3):
 
 # подключаемся к телеграму
 bot = telebot.TeleBot(token=token)
-users = {}
+# users = {}
 
 
 @bot.message_handler(commands=['start'])
@@ -236,7 +201,6 @@ def help(message):
 @bot.message_handler(content_types=['text'])
 def guess_answer(message):
 	"""Функция, которая пытается угадать из текста, что хочет пользователь: валюту или погоду"""
-	#     # content_types=['text'] - сработает, если нам прислали текстовое сообщение
 	#     # message - входящее сообщение
 	user = message.chat.id  # id автора сообщения
 	answer = message.text  # текст сообщения
@@ -281,21 +245,22 @@ def handle_loc(message):
 
 @bot.message_handler(commands=['subscribe'])
 def subscribe(message):
-	user_id = message.chat.id
-	users[user_id] = message.text
+	subscribed_users.add(message.chat.id)
 
 
 @bot.message_handler(commands=['unsubscribe'])
 def unsubscribe(message):
 	try:
-		users.pop(message.chat.id)
+		subscribed_users.discard(message.chat.id)
 	except:
 		pass
+
+thread = threading.Thread(target=parsing_smi)
+thread.start()
+
 
 while True:
 	try:
 		bot.polling(none_stop=True)
 	except:
 		pass
-
-
