@@ -26,9 +26,19 @@ thebell = 'https://news.yandex.ru/smi/thebell'
 
 parsing_url = [vedomosti, rbc, kinopoisk, sportru, geektimes, vtimes, meduza, thebell, avtoru]
 
-
 subscribed_users = set()
 users_articles = {}
+
+currency_name_dict = {}
+
+def define_currency_list():
+	answer_cur_name = requests.get('https://api.coingate.com/v2/currencies')
+	cur_name = answer_cur_name.json()
+
+	for el in cur_name:
+		currency_name_dict[el['symbol']] = el['title']
+
+define_currency_list()
 
 
 def what_weather(city='Москва'):
@@ -53,16 +63,6 @@ def currency_rate(valute='USD'):
 	answer_rate = requests.get('https://api.coingate.com/v2/rates/merchant')
 	cross_usd = answer_rate.json()['USDT']
 	rub_usd = float(cross_usd['RUB'])
-
-	answer_cur_name = requests.get('https://api.coingate.com/v2/currencies')
-	cur_name = answer_cur_name.json()
-
-	global currency_name_dict
-	currency_name_dict = {}
-	for el in cur_name:
-		# print(el['title'], el['symbol'])
-		currency_name_dict[el['symbol']] = el['title']
-	# print(currency_name_dict)
 
 	rate_list = []
 	for el in cross_usd:
@@ -192,7 +192,7 @@ def the_morning_show():
 			for digit in range(number):
 				bot.send_message(username, {get_smi_compilation()[digit - 1]})
 			bot.send_message(username, f'Интересного тебе дня и хорошего настроения, {username}!')
-		time.sleep(43200)
+		time.sleep(60)
 
 
 
@@ -204,9 +204,10 @@ bot = telebot.TeleBot(token=token)
 def start(message):
 	user = message.chat.id
 	start_text = 'Чтобы начать, достаточно прислать боту свои координаты, ввести название города или код валюты (' \
-	             'например, USD, EUR, TRY) '
+	             'например, USD, BTC, EUR, TRY). '
 	bot.send_message(user, start_text)
-
+	what_weather()
+	currency_rate()
 
 @bot.message_handler(commands=['help'])
 def help(message):
@@ -221,13 +222,10 @@ def help(message):
 @bot.message_handler(commands=['subscribe'])
 def subscribe(message):
 	subscribed_users.add(message.chat.id)
-	global isRunning
-	if not isRunning:
-		chat_id = message.chat.id
-		amount_articles = message.text
-		msg = bot.send_message(chat_id, 'Сколько случайных новостей вы хотите получать за раз?')
-		bot.register_next_step_handler(msg, how_much_articles)
-		isRunning = True
+	chat_id = message.chat.id
+	amount_articles = message.text
+	msg = bot.send_message(chat_id, 'Сколько случайных новостей вы хотите получать за раз?')
+	bot.register_next_step_handler(msg, how_much_articles)
 
 
 def how_much_articles(message):
@@ -237,15 +235,17 @@ def how_much_articles(message):
 		msg = bot.send_message(chat_id, 'Возраст должен быть числом, введите ещё раз.')
 		bot.register_next_step_handler(msg, how_much_articles)
 		return
-	msg = bot.send_message(chat_id, f'Спасибо, я запомнил: вам слать {amount_articles} новостей')
-	users_articles[message.chat.id] = amount_articles
-	isRunning = False
+	msg = bot.send_message(chat_id, f'Спасибо, я запомнил: вам слать {amount_articles} статьи! (статей? статьёв?)')
+	users_articles[message.chat.id] = int(amount_articles)
 
 
 @bot.message_handler(commands=['unsubscribe'])
 def unsubscribe(message):
 	try:
 		subscribed_users.discard(message.chat.id)
+		user = message.chat.id
+		bye_text = 'Вы отписались от утренней рассылки, больше спамить не буду'
+		bot.send_message(user, bye_text)
 	except:
 		pass
 
@@ -253,7 +253,7 @@ def unsubscribe(message):
 @bot.message_handler(content_types=['text'])
 def guess_answer(message):
 	"""Функция, которая пытается угадать из текста, что хочет пользователь: валюту или погоду"""
-	#     # message - входящее сообщение
+	# message - входящее сообщение
 	user = message.chat.id  # id автора сообщения
 	answer = message.text  # текст сообщения
 
