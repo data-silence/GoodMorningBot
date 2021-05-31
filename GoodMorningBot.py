@@ -31,12 +31,14 @@ users_articles = {}
 
 currency_name_dict = {}
 
+
 def define_currency_list():
 	answer_cur_name = requests.get('https://api.coingate.com/v2/currencies')
 	cur_name = answer_cur_name.json()
 
 	for el in cur_name:
 		currency_name_dict[el['symbol']] = el['title']
+
 
 define_currency_list()
 
@@ -140,6 +142,7 @@ def parsing_smi():
 	# так быстрее для пользователя, и безопаснее для меня
 	while True:
 		for url in parsing_url:
+			time.sleep(3600)  # временная строка - чтобы не парсилось при старте сразу (пока не снимут блок на Я)
 			get_smi_links(url)
 			time.sleep(60)
 		time.sleep(3600)
@@ -191,9 +194,8 @@ def the_morning_show():
 			bot.send_message(username, f'Случайная подборка {number} новостей, как ты и хотел:\n')
 			for digit in range(number):
 				bot.send_message(username, {get_smi_compilation()[digit - 1]})
-			bot.send_message(username, f'Интересного тебе дня и хорошего настроения, {username}!')
-		time.sleep(60)
-
+			bot.send_message(username, f'Интересного тебе дня и хорошего настроения!')
+		time.sleep(86400)
 
 
 # подключаемся к телеграму
@@ -208,6 +210,7 @@ def start(message):
 	bot.send_message(user, start_text)
 	what_weather()
 	currency_rate()
+
 
 @bot.message_handler(commands=['help'])
 def help(message):
@@ -235,7 +238,9 @@ def how_much_articles(message):
 		msg = bot.send_message(chat_id, 'Возраст должен быть числом, введите ещё раз.')
 		bot.register_next_step_handler(msg, how_much_articles)
 		return
-	msg = bot.send_message(chat_id, f'Спасибо, я запомнил: вам слать {amount_articles} статьи! (статей? статьёв?)')
+	msg = bot.send_message(chat_id, f'Спасибо, я запомнил: вам слать {amount_articles} статьи! (статей? статьёв?)\nВ '
+	                                f' первый раз официально начну рассылать через сутки, а сейчас покажу, как примерно'
+	                                f' она будет выглядеть:')
 	users_articles[message.chat.id] = int(amount_articles)
 
 
@@ -273,7 +278,6 @@ def handle_loc(message):
 	user = message.chat.id  # id автора сообщения
 	now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 	coord_dict = message.location
-	# default_currency = 'USD'
 	coord = (coord_dict.latitude, coord_dict.longitude)
 	reverse = partial(geolocator.reverse, language="ru")
 	address = reverse(coord).raw['address']
